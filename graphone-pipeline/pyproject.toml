@@ -1,0 +1,36 @@
+[project]
+name = "graphone-pipeline"
+version = "0.1.0"
+description = "High-throughput intelligence graph ingestion pipeline"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "curl-cffi>=0.7.0",
+    "selectolax>=0.3.21",
+    "pydantic>=2.7.0",
+    "pydantic-settings>=2.2.0",
+    "tenacity>=8.3.0",
+    "structlog>=24.1.0",
+    "aiosqlite>=0.20.0",
+    "python-dateutil>=2.9.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "feedparser>=6.0.14",
+    "trafilatura>=2.2.0",
+    "httpx>=0.28.1",
+    "litellm>=1.100.1",
+    "python-dotenv>=1.2.3",
+    "rapidfuzz>=3.14.6",
+    "gspread>=6.2.1",
+    "playwright>=1.62.0",
+    "markdown>=3.10.3",
+    "pypdf>=6.18.1",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008"]
