@@ -1,9 +1,13 @@
 import asyncio
 from collections import defaultdict
 import json
+import os
 from pathlib import Path
 
+from dotenv import load_dotenv
 import structlog
+
+load_dotenv()
 
 from src.graph.resolver import EntityCanonicalizer
 from src.llm.orchestrator import LLMOrchestrator

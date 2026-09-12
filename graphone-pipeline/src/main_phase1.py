@@ -1,5 +1,7 @@
 import asyncio
 import os
+from dotenv import load_dotenv
+load_dotenv()
 import structlog
 from typing import Any
 from src.core.client import AsyncScraperClient

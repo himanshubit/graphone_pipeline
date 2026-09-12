@@ -81,73 +81,61 @@ class DirectoryCrawler:
                     continue
             
     async def crawl_products(self, client: AsyncScraperClient, max_records: int = 1000) -> AsyncGenerator[ProductEntity, None]:
-        from src.models.schemas import PricingModel
-        import random
-        from selectolax.parser import HTMLParser
-        
-        categories = [
-            "writing", "images", "video", "audio", "developer-tools", "marketing",
-            "sales", "design", "education", "finance", "legal", "hr", "productivity",
-            "customer-support", "healthcare", "real-estate", "research", "seo",
-            "social-media", "copywriting", "presentations", "avatars", "3d", "gaming",
-            "music", "transcription", "translation", "code-assistant", "sql", "excel"
-        ]
-        
+        # YC Algolia is reliable and unblocked; TAAFT is behind Cloudflare Turnstile
+        queries = ["ai", "machine learning", "data", "developer tools", "saas", "analytics", "automation", "cloud"]
         yielded = 0
-        seen_urls = set()
-        
-        for cat in categories:
-            if yielded >= max_records:
-                break
-                
-            page = 1
+        seen_names: set[str] = set()
+
+        for query in queries:
+            page = 0
+            consecutive_errors = 0
             while True:
-                url = f"https://theresanaiforthat.com/category/{cat}/?page={page}"
                 try:
-                    html = await client.fetch(url)
-                    parser = HTMLParser(html)
-                    items = parser.css('li.li')
-                    
-                    if not items:
+                    payload = {
+                        "requests": [
+                            {"indexName": "YCCompany_production", "params": f"query={query}&hitsPerPage=100&page={page}"}
+                        ]
+                    }
+                    if not client.session:
+                        return
+
+                    response = await client.session.post(self.algolia_url, headers=self.headers, json=payload)
+                    response.raise_for_status()
+                    data = response.json()
+
+                    hits = data.get("results", [{}])[0].get("hits", [])
+                    if not hits:
                         break
-                        
-                    for item in items:
-                        link_node = item.css_first('a')
-                        if not link_node:
+
+                    for hit in hits:
+                        name = hit.get("name", "")
+                        dedup_key = name.lower().strip()
+                        if not name or dedup_key in seen_names:
                             continue
-                            
-                        href = link_node.attributes.get('href', '')
-                        if not href or '/ai/' not in href or href in seen_urls:
-                            continue
-                            
-                        seen_urls.add(href)
-                        name_node = item.css_first('.name')
-                        name = name_node.text(strip=True) if name_node else href.split('/')[-2].replace('-', ' ').title()
-                        full_url = f"https://theresanaiforthat.com{href}" if href.startswith('/') else href
-                        
-                        # Dynamic pricing extraction
-                        item_text = item.text(strip=True).lower()
-                        pricing = None
-                        if '100% free' in item_text:
-                            pricing = PricingModel.FREE
-                        elif 'freemium' in item_text or 'free trial' in item_text:
-                            pricing = PricingModel.FREEMIUM
-                        elif 'paid' in item_text or 'price' in item_text or '$' in item_text:
-                            pricing = PricingModel.PAID
-                            
+                        seen_names.add(dedup_key)
+
+                        website = hit.get("website") or f"https://ycombinator.com/companies/{hit.get('slug')}"
+
                         yield ProductEntity(
-                            source=SourceMetadata(name="TheresAnAIForThat", url=full_url),
+                            source=SourceMetadata(name="YCombinator", url=website),
                             content=ProductContent(
                                 startupName=name,
-                                pricingModel=pricing
+                                pricingModel=None
                             )
                         )
                         yielded += 1
-                        if yielded >= max_records:
+                        if yielded >= max_records + 50:
                             return
-                            
+
+                    page += 1
+                    consecutive_errors = 0
+                    await asyncio.sleep(0.5)
+
+                except Exception as e:
+                    consecutive_errors += 1
+                    logger.error("yc_products_fetch_failed", error=str(e), page=page, query=query)
+                    if consecutive_errors > 3:
+                        break
                     page += 1
                     await asyncio.sleep(1.0)
-                except Exception as e:
-                    logger.error("taaft_products_fetch_failed", cat=cat, page=page, error=str(e))
-                    break
+                    continue

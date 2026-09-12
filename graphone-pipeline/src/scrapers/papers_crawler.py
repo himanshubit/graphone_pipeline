@@ -58,9 +58,9 @@ class ResearchPapersCrawler:
                         github_url = None
                         github_stars = None
                         import re
-                        github_match = re.search(r'https?://github\.com/[^\s\)]+', summary)
+                        github_match = re.search(r"https?://github\.com/([a-zA-Z0-9_\-\.]+)/([a-zA-Z0-9_\-\.]+)", summary)
                         if github_match:
-                            github_url = github_match.group(0).rstrip('.,')
+                            github_url = github_match.group(0).rstrip('.,/>)')
                             if client.session:
                                 github_stars = await self.enricher.get_stars(client.session, github_url)
 
