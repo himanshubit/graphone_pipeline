@@ -18,7 +18,7 @@ uv sync
 
 ## Running the Pipeline
 
-The project is split into several execution phases. From within the `graphone-pipeline` directory, you can run the following commands:
+The project is split into several execution phases. From within the `graphone_pipeline` directory, you can run the following commands:
 
 **Phase 1: Products Ingestion**
 ```bash
