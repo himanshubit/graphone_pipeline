@@ -12,7 +12,7 @@ This repository contains the GraphOne / FrontierAtlas pipeline.
 Navigate to the main project directory and install the dependencies using `uv`:
 
 ```bash
-cd graphone-pipeline
+cd graphone_pipeline
 uv sync
 ```
 
